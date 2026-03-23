@@ -7,6 +7,7 @@ The goal is to make the math tangible. Instead of reading formulations on paper,
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Streamlit](https://img.shields.io/badge/built%20with-Streamlit-ff4b4b)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![CI](https://github.com/AthenaTheOwl/Robust-Facility-Location/actions/workflows/ci.yml/badge.svg)
 
 ## The Problem
 
@@ -87,6 +88,29 @@ Problem instances and model parameters are fingerprinted (BLAKE2b for data array
 
 **Simulation** — number of Monte Carlo scenarios, perturbation scale, distribution family, correlation on/off, simulation seed.
 
+## Limitations
+
+- The adaptive model is the most computationally expensive part of the app and can be slow on larger instances.
+- The generated problem instances are synthetic and intended for teaching and exploration rather than production planning.
+- For interpretability, the adaptive page reports the worst-case planning objective while plotting nominal dispatch flows for the chosen facilities.
+- Monte Carlo evaluation fixes facility openings and re-optimizes flows after demand realization; it does not model a full multistage operational process.
+
+## Roadmap
+
+- Add a deployed demo link and README screenshots or GIFs.
+- Add curated scenario presets that make the nominal-versus-robust tradeoff visible with minimal tuning.
+- Improve adaptive solve performance for medium-sized instances.
+- Add scenario export and import so interesting runs can be shared and reproduced.
+- Add lightweight model-invariant tests beyond import and compile checks.
+
+## References
+
+- Dimitris Bertsimas and Melvyn Sim, "The Price of Robustness," Operations Research, 2004. https://doi.org/10.1287/opre.1030.0065
+- Aharon Ben-Tal, Laurent El Ghaoui, and Arkadi Nemirovski, Robust Optimization, 2009. https://doi.org/10.1515/9781400831050
+- Dimitris Bertsimas and John N. Tsitsiklis, Introduction to Linear Optimization, 1997.
+
+Reference papers, textbooks, and course-derived formulations informed the implementation, but the repository itself is focused on the runnable application and does not bundle external textbook PDFs.
+
 ## Mathematical Formulations
 
 ### Nominal MILP
@@ -141,6 +165,18 @@ Each constraint (positivity, demand, capacity) that must hold for all z ∈ U is
 | Python 3.10+ | Language runtime |
 
 All solvers are free and open source. No Gurobi, CPLEX, or other commercial license is required.
+
+## Development
+
+Local validation is intentionally lightweight:
+
+```bash
+pip install -r requirements.txt
+python -m compileall .
+streamlit run app.py
+```
+
+A GitHub Actions workflow runs the install and compile checks automatically on pushes and pull requests.
 
 ## Project Structure
 
