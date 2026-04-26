@@ -1,208 +1,152 @@
-# Robust Facility Location Explorer
+<!-- ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ -->
 
-An interactive application for exploring how **robust and adaptive optimization** protects facility location decisions against demand uncertainty.
+# N° 06 · robust facility location explorer
 
-The goal is to make the math tangible. Instead of reading formulations on paper, you configure a problem, solve it four different ways, and stress-test each solution with Monte Carlo simulation — watching how the cost-protection tradeoff plays out across thousands of scenarios.
+> *where to build, when you don't know demand.*
 
-![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
-![Streamlit](https://img.shields.io/badge/built%20with-Streamlit-ff4b4b)
-![License: MIT](https://img.shields.io/badge/license-MIT-green)
-![CI](https://github.com/AthenaTheOwl/Robust-Facility-Location/actions/workflows/ci.yml/badge.svg)
+the math, made tangible. configure a problem, solve it four different ways, and stress-test each solution with monte carlo — watching the cost-protection tradeoff play out across thousands of scenarios. no commercial solvers required.
 
-## The Problem
-
-A firm must decide **where to open facilities** — warehouses, hospitals, data centers, charging stations — to serve customers spread across a geography. Each candidate facility has a fixed opening cost and a capacity limit. Serving a customer from a facility costs proportional to the distance between them. The objective is to minimize the total of opening costs plus transportation costs while meeting every customer's demand.
-
-The complication: **demand is uncertain at the time facilities are built.** You commit capital to locations and capacities today, but actual demand materializes later and may differ from the forecast. A plan that's optimal for the predicted demand can fail — over-capacity at some facilities, shortfalls at others — when reality deviates even modestly.
-
-This is the core tension the app explores: **how to choose facility locations that perform well not just for one demand forecast, but across a range of plausible demand scenarios**, and what that protection costs.
-
-## Quick Start
+`python` · `streamlit` · `pulp` + `CBC` · `plotly` · `MIT` · 2024 · **status: solved**
 
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-No commercial solvers needed. All optimization uses [PuLP](https://coin-or.github.io/pulp/) with the free CBC solver.
+<!-- ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ -->
 
-## What Can Be Studied
+## the problem
 
-| Question | Where to explore it |
-|----------|-------------------|
-| How fragile is a cost-optimal plan? | Page 2 — perturb demand with the "What If" slider and watch the nominal solution fail |
-| How much does robustness cost? | Page 3 — compare nominal vs robust costs and facility counts side-by-side |
-| How does conservatism scale with the uncertainty budget? | Page 5 — Pareto sweep over Γ shows the exact cost-vs-protection curve |
-| Which uncertainty geometry fits the problem? | Page 4 — compare box, ellipsoid, and L1 ball in a 2D projection |
-| Does adaptivity reduce the price of robustness? | Page 4 — compare adaptive cost to static robust at the same ρ, Γ |
-| Which approach survives real-world randomness? | Page 6 — Monte Carlo stress test with tunable scale, distribution, and correlation |
-| How does spatial demand correlation change the solution? | Pages 1 & 3 — vary R_D and watch the correlation matrix and solution shift |
-| What's the tail risk of each approach? | Page 6 — CVaR, 95th percentile, max cost side-by-side |
-| How does network geography affect vulnerability? | Page 1 — switch between Uniform, Clustered, and Hub-and-Spoke layouts |
+a firm decides **where to open facilities** — warehouses, hospitals, data centers, charging stations — to serve customers spread across a geography. each candidate has a fixed opening cost and a capacity limit. serving costs scale with distance. the objective: minimize opening + transport, while meeting every customer's demand.
 
-## Features
+the catch: **demand is uncertain when you decide.** the plan that's optimal for the forecast can fall over when reality drifts even modestly. so the question becomes: how do you choose locations that perform well across a *range* of plausible demands — and what does that protection cost?
 
-### Four Optimization Approaches
+## the four approaches
 
-**Nominal (Deterministic).**
-Classical mixed-integer linear program assuming the demand forecast is perfect. This produces the cheapest possible network — and the most fragile. The app includes a "What If" slider (Page 2) that perturbs demand from -50% to +100%, showing exactly when unmet demand appears and penalty costs spike.
+| approach | what it is |
+|---|---|
+| **nominal**         | classical MILP, assumes the forecast is correct. cheapest possible. most fragile. |
+| **polyhedral robust** *(bertsimas-sim)* | worst-case demand within a box + budget set. two knobs: `ρ` (per-customer deviation) and `Γ` (how many can deviate at once). |
+| **ellipsoidal robust** | swap the polyhedron for an L2 ball of radius `Ω`. less conservative — large deviations in some force small in others. stays MILP. |
+| **adaptive** *(affine decision rules)* | facilities decided up front; flows are allowed to react to realized demand via `y(z) = u + V·z`. fewer facilities at the same protection level, typically. |
 
-**Polyhedral Robust (Bertsimas-Sim).**
-Protects against worst-case demand within a box + budget uncertainty set. Two parameters control conservatism:
-- **ρ** (0 to 1) — how much any single customer's demand can deviate from forecast
-- **Γ** (0 to M) — how many customers can deviate simultaneously
+binary facility variables in the adaptive model are relaxed to `[0,1]` and recovered by greedy rounding (most-fractional-first, re-solve, repeat).
 
-When Γ = 0 you get the nominal solution. When Γ = M every customer can be worst-case at once (extremely conservative). The interesting region is in between. Demand perturbations are spatially correlated through a matrix P, controlled by a radius parameter R_D — nearby customers' demands move together. The robust counterpart is reformulated via LP duality into a tractable MILP with auxiliary variables, following [Bertsimas & Sim (2004)](https://doi.org/10.1007/s10107-003-0396-4).
+## what's there to study
 
-**Ellipsoidal Robust.**
-Replaces the polyhedral set with an L2 ball (`‖z‖₂ ≤ Ω`). This is less conservative because it bounds total squared deviation — large deviations in some customers force small deviations in others. The worst-case demand margin for each customer reduces to `Ω · ‖P[j,:]‖₂`, a precomputable constant, so the model stays MILP. Page 4 includes a 2D geometry visualization comparing the box, ellipsoid, and L1 diamond to build geometric intuition. The formulation follows the framework in [Ben-Tal, El Ghaoui & Nemirovski (2009)](https://doi.org/10.1515/9781400831050).
+| question | where |
+|---|---|
+| how fragile is the cost-optimal plan?              | page 2 — perturb demand with the "what if" slider |
+| how much does robustness cost?                     | page 3 — nominal vs robust, side-by-side |
+| how does conservatism scale with `Γ`?              | page 5 — pareto sweep |
+| which uncertainty geometry fits the problem?       | page 4 — box, ellipsoid, and L1 ball in 2D |
+| does adaptivity reduce the price of robustness?    | page 4 — adaptive vs static at the same `ρ`, `Γ` |
+| which approach survives real-world randomness?     | page 6 — monte carlo with tunable scale, dist, correlation |
+| how does spatial correlation change the solution?  | pages 1 & 3 — vary `R_D`, watch the P matrix shift |
+| what's the tail risk?                              | page 6 — CVaR, 95th percentile, max cost |
+| how does network geography matter?                 | page 1 — uniform, clustered, hub-and-spoke layouts |
 
-**Adaptive (Affine Decision Rules).**
-Facility locations are decided upfront, but operational flows are allowed to react to realized demand through affine policies: `y(z) = u + V·z`. This models the real-world flexibility a firm has to redirect shipments after observing actual orders. The result typically opens fewer facilities than static robust at the same protection level. Binary facility variables are relaxed to [0, 1] and recovered via a greedy rounding heuristic. The reported objective is the worst-case planning cost; network visualizations show nominal dispatch flows for interpretability.
+## the monte carlo
 
-### Monte Carlo Stress Test
+page 6 fixes facility decisions, then generates 50–2,000 random demand scenarios and re-solves the operational dispatch for each. outputs:
 
-Page 6 fixes the facility decisions from each approach, then generates hundreds or thousands of random demand scenarios and re-solves the operational dispatch for each one. The output includes:
+- **cost histograms** — robust solutions sit tighter
+- **CDF curves** — the most revealing chart in the app: nominal has a long expensive right tail; robust solutions don't
+- **infeasibility rates** — fraction of scenarios with unmet demand
+- **tail risk** — 95th percentile, CVaR (avg of worst 5%), max
+- **box plots** — spread + outliers, compactly
 
-- **Cost histograms** — overlaid distributions showing robust solutions have tighter, more predictable cost profiles
-- **CDF curves** — the single most revealing visualization: the nominal solution has a long expensive right tail while robust solutions are concentrated
-- **Infeasibility rates** — what fraction of scenarios result in unmet demand
-- **Tail risk metrics** — 95th percentile, CVaR (average cost in the worst 5%), maximum cost
-- **Box plots** — compact summary of spread and outliers
+configurable: scenarios, perturbation magnitude, distribution (uniform / normal), correlation on/off via the P matrix, seed.
 
-Simulation parameters are fully configurable: number of scenarios (50–2000), perturbation magnitude, distribution (Uniform or Normal), and whether demand perturbations are spatially correlated through the P matrix.
+## scenario-aware caching
 
-### Pareto Frontier
+problem instances and model parameters are fingerprinted (BLAKE2b for arrays, JSON hash for settings). solutions cache at two levels — problem signature and model signature. moving a slider doesn't re-solve models that haven't been affected. changing the instance invalidates everything downstream.
 
-Page 5 sweeps the budget parameter Γ from 0 to M and plots total cost and number of open facilities against the uncertainty budget — the "price of robustness" curve. This shows exactly how much additional cost each increment of protection requires.
+<!-- ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ -->
 
-### Scenario-Aware Caching
+## the formulations
 
-Problem instances and model parameters are fingerprinted (BLAKE2b for data arrays, JSON hash for model settings). Solutions are cached at two levels — problem signature and model signature — so changing a slider doesn't re-solve models that haven't been affected. Changing the problem instance automatically invalidates all downstream results.
-
-## Configurable Parameters
-
-**Problem instance** — N candidate facilities (3–15), M customers (10–80), random seed, spatial layout (Uniform, Clustered, Hub-and-Spoke), demand range, facility cost range, capacity range.
-
-**Uncertainty** — ρ (perturbation radius per demand), Γ (L1 budget across demands), Ω (ellipsoid radius), R_D (spatial correlation radius for the P matrix).
-
-**Simulation** — number of Monte Carlo scenarios, perturbation scale, distribution family, correlation on/off, simulation seed.
-
-## Limitations
-
-- The adaptive model is the most computationally expensive part of the app and can be slow on larger instances.
-- The generated problem instances are synthetic and intended for teaching and exploration rather than production planning.
-- For interpretability, the adaptive page reports the worst-case planning objective while plotting nominal dispatch flows for the chosen facilities.
-- Monte Carlo evaluation fixes facility openings and re-optimizes flows after demand realization; it does not model a full multistage operational process.
-
-## Roadmap
-
-- Add a deployed demo link and README screenshots or GIFs.
-- Add curated scenario presets that make the nominal-versus-robust tradeoff visible with minimal tuning.
-- Improve adaptive solve performance for medium-sized instances.
-- Add scenario export and import so interesting runs can be shared and reproduced.
-- Add lightweight model-invariant tests beyond import and compile checks.
-
-## References
-
-- Dimitris Bertsimas and Melvyn Sim, "The Price of Robustness," Operations Research, 2004. https://doi.org/10.1287/opre.1030.0065
-- Aharon Ben-Tal, Laurent El Ghaoui, and Arkadi Nemirovski, Robust Optimization, 2009. https://doi.org/10.1515/9781400831050
-- Dimitris Bertsimas and John N. Tsitsiklis, Introduction to Linear Optimization, 1997.
-
-Reference papers, textbooks, and course-derived formulations informed the implementation, but the repository itself is focused on the runnable application and does not bundle external textbook PDFs.
-
-## Mathematical Formulations
-
-### Nominal MILP
+### nominal MILP
 ```
 min  Σ fᵢxᵢ + Σ cᵢⱼyᵢⱼ
-s.t. Σᵢ yᵢⱼ ≥ dⱼ           ∀j  (demand satisfaction)
-     Σⱼ yᵢⱼ ≤ sᵢxᵢ         ∀i  (capacity linking)
-     xᵢ ∈ {0,1}, yᵢⱼ ≥ 0
+s.t. Σᵢ yᵢⱼ ≥ dⱼ              ∀j   demand
+     Σⱼ yᵢⱼ ≤ sᵢxᵢ            ∀i   capacity
+     xᵢ ∈ {0,1},  yᵢⱼ ≥ 0
 ```
 
-### Polyhedral Robust Counterpart
+### polyhedral robust counterpart
 
-Uncertainty set: `U = { z : |zₖ| ≤ ρ, ‖z‖₁ ≤ Γ }`
-
-Demand under perturbation: `d̃ⱼ = dⱼ + (P·z)ⱼ` where P is a spatial correlation matrix.
-
-The worst-case demand for each customer j is `dⱼ + max_{z∈U} (P·z)ⱼ`. Dualizing the inner maximization over the polyhedral set introduces auxiliary variables (ν for the box dual, λ for the budget dual) and yields a tractable MILP:
+uncertainty set: `U = { z : |zₖ| ≤ ρ, ‖z‖₁ ≤ Γ }`. demand under perturbation: `d̃ⱼ = dⱼ + (P·z)ⱼ`. dualizing the inner max gives a tractable MILP with auxiliary variables (`ν` for the box dual, `λ` for the budget dual):
 
 ```
 Σᵢ uᵢⱼ ≥ dⱼ + ρ·Σₖ νⱼₖ + Γ·λⱼ    ∀j
-λⱼ + νⱼₖ ≥ +Pⱼₖ                      ∀j,k
-λⱼ + νⱼₖ ≥ −Pⱼₖ                      ∀j,k
-νⱼₖ ≥ 0,  λⱼ ≥ 0
+λⱼ + νⱼₖ ≥ +Pⱼₖ                    ∀j,k
+λⱼ + νⱼₖ ≥ −Pⱼₖ                    ∀j,k
+νⱼₖ, λⱼ ≥ 0
 ```
 
-### Ellipsoidal Robust
+### ellipsoidal robust
 
-Uncertainty set: `U = { z : ‖z‖₂ ≤ Ω }`
+uncertainty set: `‖z‖₂ ≤ Ω`. the support function of the L2 ball gives a precomputable constant per customer: `dⱼ + Ω·‖P[j,:]‖₂`. linear constraint, MILP overall.
 
-The support function of the L2 ball gives: `max_{‖z‖₂ ≤ Ω} Pⱼ·z = Ω·‖P[j,:]‖₂`. This is a precomputable constant per customer, so the robust demand constraint becomes `Σᵢ yᵢⱼ ≥ dⱼ + Ω·‖P[j,:]‖₂` — still a linear constraint, and the overall model stays MILP.
+### adaptive (affine decision rules)
 
-### Adaptive (Affine Decision Rules)
+flows become affine in the realization: `yᵢⱼ(z) = uᵢⱼ + Σₖ Vᵢⱼₖ · zₖ`. each constraint that must hold for all `z ∈ U` is dualized using the same box + budget pattern, with `V` as additional decisions.
 
-Flow variables become affine functions of the uncertainty realization:
+<!-- ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ -->
 
-```
-yᵢⱼ(z) = uᵢⱼ + Σₖ Vᵢⱼₖ · zₖ
-```
+## configurable parameters
 
-Each constraint (positivity, demand, capacity) that must hold for all z ∈ U is dualized using the same box + budget duality pattern as the polyhedral robust model, but now with the affine coefficients V as additional decision variables. Binary facility variables are relaxed to [0, 1] and recovered through greedy rounding: solve the relaxation, fix the most fractional facility to 1, re-solve, repeat until all facilities are binary.
+**problem instance** — N candidate facilities (3–15), M customers (10–80), seed, layout (uniform / clustered / hub-and-spoke), demand range, facility cost range, capacity range.
 
-## Tech Stack
+**uncertainty** — `ρ`, `Γ`, `Ω`, `R_D` (spatial correlation radius for P).
 
-| Component | Role |
-|-----------|------|
-| [Streamlit](https://streamlit.io) | Interactive multi-page web UI |
-| [PuLP](https://coin-or.github.io/pulp/) + CBC | MILP solver (free, no commercial license) |
-| [Plotly](https://plotly.com/python/) | Interactive network maps, charts, and distribution plots |
-| [NumPy](https://numpy.org) | Array operations, distance matrices, correlation matrix |
-| [Pandas](https://pandas.pydata.org) | Data tables and summary statistics |
-| [SciPy](https://scipy.org) | Supporting numerical routines |
-| Python 3.10+ | Language runtime |
+**simulation** — # scenarios, scale, distribution, correlation on/off, seed.
 
-All solvers are free and open source. No Gurobi, CPLEX, or other commercial license is required.
-
-## Development
-
-Local validation is intentionally lightweight:
-
-```bash
-pip install -r requirements.txt
-python -m compileall .
-streamlit run app.py
-```
-
-A GitHub Actions workflow runs the install and compile checks automatically on pushes and pull requests.
-
-## Project Structure
+## the floorplan
 
 ```
-├── app.py                    # Streamlit entry point and landing page
-├── requirements.txt
-├── core/
-│   ├── data.py               # ProblemData/SolutionData dataclasses, instance generation, P matrix
-│   ├── models.py             # Nominal MILP, polyhedral robust counterpart, operational LP
-│   ├── models_advanced.py    # Ellipsoidal robust, adaptive affine policies + greedy rounding
-│   ├── simulation.py         # Monte Carlo engine, CVaR computation, summary statistics
-│   ├── state.py              # Scenario-aware caching, BLAKE2b fingerprinting, session state
-│   └── utils.py              # Cost breakdowns, capacity utilization, solution summaries
-├── viz/
-│   ├── network.py            # Facility-customer network maps, cost bars, capacity charts
-│   ├── comparison.py         # Grouped cost comparisons, Pareto frontier plots
-│   └── simulation_plots.py   # Histograms, CDFs, box plots, infeasibility and tail risk charts
-└── pages/
-    ├── 1_Problem_Setup.py    # Configure instance, visualize geography and correlation
-    ├── 2_Nominal_Solution.py # Solve deterministic MILP, "What If" fragility analysis
-    ├── 3_Robust_Solution.py  # Polyhedral robust with ρ/Γ controls, nominal comparison
-    ├── 4_Advanced_Models.py  # Ellipsoidal and adaptive tabs, uncertainty set geometry
-    ├── 5_Comparison.py       # Side-by-side all approaches, Pareto sweep
-    └── 6_Monte_Carlo.py      # Stress test, cost distributions, risk metrics
+app.py                       streamlit entry + landing
+core/
+  data.py                    ProblemData/SolutionData, instance generation, P matrix
+  models.py                  nominal MILP, polyhedral robust, operational LP
+  models_advanced.py         ellipsoidal, adaptive + greedy rounding
+  simulation.py              monte carlo, CVaR, summary stats
+  state.py                   scenario-aware caching, BLAKE2b fingerprinting
+  utils.py                   cost breakdowns, capacity utilization
+viz/
+  network.py                 facility-customer maps, cost bars
+  comparison.py              grouped comparisons, pareto plots
+  simulation_plots.py        histograms, CDFs, box plots, tail risk
+pages/
+  1_Problem_Setup.py
+  2_Nominal_Solution.py
+  3_Robust_Solution.py
+  4_Advanced_Models.py
+  5_Comparison.py
+  6_Monte_Carlo.py
 ```
 
-## License
+## limitations
 
-MIT
+- the adaptive model is the most expensive piece; can be slow on larger instances
+- problem instances are synthetic — for teaching and exploration, not production planning
+- the adaptive page reports the worst-case planning objective while plotting nominal dispatch flows, for interpretability
+- monte carlo fixes facility openings and re-optimizes flows; not a full multistage operational process
+
+## roadmap
+
+- deployed demo + screenshots / GIFs
+- curated scenario presets that make the nominal-vs-robust contrast visible with minimal tuning
+- adaptive solve performance for medium instances
+- scenario import / export
+- model-invariant tests beyond import + compile
+
+## colophon
+
+based on:
+- bertsimas & sim, *the price of robustness* (2004) — https://doi.org/10.1287/opre.1030.0065
+- ben-tal, el ghaoui & nemirovski, *robust optimization* (2009) — https://doi.org/10.1515/9781400831050
+- bertsimas & tsitsiklis, *introduction to linear optimization*
+
+`MIT` license. *built downstairs.* — [the basement, room 7](https://github.com/AthenaTheOwl)
