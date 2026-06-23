@@ -142,6 +142,27 @@ pages/
 - scenario import / export
 - model-invariant tests beyond import + compile
 
+## live demo
+
+Deploy with Streamlit Cloud using:
+
+```text
+streamlit_app.py
+```
+
+Local run:
+
+```bash
+python -m pip install -r requirements.txt
+python -m streamlit run streamlit_app.py
+```
+
+## connects to
+
+- `semiconductor-e2e-manufacturing-optimization` for the same uncertainty idea in wafer sourcing.
+- `world-food-program-robust-simulator` for humanitarian network planning under disrupted supply.
+- `procurement-negotiation-lab` for the negotiation layer that would sit after a location or sourcing choice.
+
 ## colophon
 
 based on:
