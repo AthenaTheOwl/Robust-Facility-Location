@@ -2,6 +2,11 @@
 
 A warehouse plan is cheap until demand moves. This app lets the forecast lie a little, then a lot, and asks which facilities still earn their rent.
 
+> **⚠️ Archived — superseded by [Robust-Facility-Location](https://github.com/AthenaTheOwl/Robust-Facility-Location).**
+> This repo is a byte-identical earlier copy of the same engine. The maintained
+> version carries the maintained scorecard + test suite. Kept read-only to
+> preserve history; use Robust-Facility-Location instead.
+
 ## What it does
 
 This Streamlit app explores facility-location decisions under uncertain demand. You configure a synthetic network, solve it four ways, and stress-test each solution with Monte Carlo scenarios.
