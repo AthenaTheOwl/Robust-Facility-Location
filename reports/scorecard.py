@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Iterable
 
 DEFAULT_OUTPUT = Path(__file__).with_name("scorecard.jsonl")
+BIG_INSTANCE = "n=8,m=30,seed=42"
+ADR_INSTANCE = "n=5,m=12,seed=42"
 
 
 class ScorecardError(Exception):
@@ -73,7 +75,7 @@ def _json_ready(value):
 def build_rows() -> list[dict]:
     from core.data import generate_instance
     from core.models import solve_nominal, solve_robust
-    from core.models_advanced import solve_robust_ellipsoidal
+    from core.models_advanced import solve_adaptive, solve_robust_ellipsoidal
     from core.utils import solution_summary
 
     approaches = (
@@ -94,11 +96,48 @@ def build_rows() -> list[dict]:
 
         row = solution_summary(data, solution)
         row.pop("Solve Time (s)", None)
+        row["instance"] = BIG_INSTANCE
         summaries.append({key: _json_ready(value) for key, value in row.items()})
 
     nominal_total = float(summaries[0]["Total Cost"])
     for row in summaries:
         row["cost_delta"] = round(float(row["Total Cost"]) - nominal_total, 2)
+
+    # solve_adaptive measured ~269s on n=8,m=30 versus ~3s here. Cross-instance
+    # deltas are meaningless, so this ADR companion gets its own nominal row.
+    data_small = generate_instance(n=5, m=12, seed=42)
+
+    nominal_small = solve_nominal(data_small)
+    nominal_small.name = "Nominal (ADR instance)"
+    if nominal_small.status != "Optimal":
+        raise ScorecardError(
+            f"Nominal (ADR instance) returned non-Optimal status: {nominal_small.status}"
+        )
+
+    nominal_small_row = solution_summary(data_small, nominal_small)
+    nominal_small_row.pop("Solve Time (s)", None)
+    nominal_small_row["instance"] = ADR_INSTANCE
+    nominal_small_json = {key: _json_ready(value) for key, value in nominal_small_row.items()}
+
+    adaptive = solve_adaptive(data_small, rho=1.0, gamma=3.0)
+    adaptive.name = "Adaptive (rho=1, Gamma=3)"
+    if adaptive.status != "Optimal (rounded)":
+        raise ScorecardError(
+            "Adaptive (rho=1, Gamma=3) expected status 'Optimal (rounded)' "
+            f"but got {adaptive.status!r}; 'Approximate (rounded)' depends on "
+            "wall-clock LP time limits and is not deterministic enough to commit"
+        )
+
+    adaptive_row = solution_summary(data_small, adaptive)
+    adaptive_row.pop("Solve Time (s)", None)
+    adaptive_row["instance"] = ADR_INSTANCE
+    adaptive_json = {key: _json_ready(value) for key, value in adaptive_row.items()}
+
+    nominal_small_total = float(nominal_small_json["Total Cost"])
+    for row in (nominal_small_json, adaptive_json):
+        row["cost_delta"] = round(float(row["Total Cost"]) - nominal_small_total, 2)
+
+    summaries.extend((nominal_small_json, adaptive_json))
 
     return summaries
 
@@ -118,11 +157,17 @@ def main(argv: list[str] | None = None) -> int:
         output_path = _parse_output_path(raw_argv)
         rows = build_rows()
         write_rows(rows, output_path)
-        robust_rows = [row for row in rows if row["Approach"] != "Nominal"]
+        robust_rows = [
+            row
+            for row in rows
+            if row["instance"] == BIG_INSTANCE and row["Approach"] != "Nominal"
+        ]
         cheapest = min(robust_rows, key=lambda row: float(row["Total Cost"]))
+        adaptive_row = next(row for row in rows if "Adaptive" in row["Approach"])
         print(
             f"wrote {len(rows)} rows to {output_path}; "
-            f"cheapest robust approach: {cheapest['Approach']}"
+            f"cheapest robust approach: {cheapest['Approach']}; "
+            f"adaptive ADR-instance delta: {adaptive_row['cost_delta']:+.2f}"
         )
         return 0
     except ScorecardError as exc:
