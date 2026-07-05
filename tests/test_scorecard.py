@@ -32,19 +32,24 @@ def scorecard_rows() -> list[dict]:
 
 
 def test_scorecard_shape(scorecard_rows: list[dict]) -> None:
-    assert len(scorecard_rows) == 4
+    assert len(scorecard_rows) == 6
+    assert sum(1 for row in scorecard_rows if "Adaptive" in row["Approach"]) == 1
 
-    nominal = next(row for row in scorecard_rows if row["Approach"] == "Nominal")
-    nominal_total = nominal["Total Cost"]
+    nominal_by_instance = {
+        row["instance"]: row["Total Cost"]
+        for row in scorecard_rows
+        if "Nominal" in row["Approach"]
+    }
 
     for row in scorecard_rows:
         assert "Approach" in row
         assert "Total Cost" in row
         assert "cost_delta" in row
+        assert "instance" in row
         assert "Solve Time (s)" not in row
         assert isinstance(row["cost_delta"], numbers.Real)
-        if row["Approach"] != "Nominal":
-            assert row["Total Cost"] >= nominal_total - 1e-6
+        if "Nominal" not in row["Approach"]:
+            assert row["Total Cost"] >= nominal_by_instance[row["instance"]] - 1e-6
 
 
 def test_scorecard_output_is_byte_identical() -> None:

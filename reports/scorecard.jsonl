@@ -1,4 +1,6 @@
-{"Approach": "Nominal", "Avg Utilization": 96.0, "Facilities Opened": 2, "Facility Cost": 10.45, "Spare Capacity": 1.21, "Total Cost": 19.31, "Transport Cost": 8.86, "cost_delta": 0.0}
-{"Approach": "Robust (Gamma=3)", "Avg Utilization": 90.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 4.39, "Total Cost": 26.22, "Transport Cost": 10.97, "cost_delta": 6.91}
-{"Approach": "Robust (Gamma=5)", "Avg Utilization": 99.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 0.13, "Total Cost": 27.46, "Transport Cost": 12.21, "cost_delta": 8.15}
-{"Approach": "Ellipsoidal", "Avg Utilization": 81.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 8.75, "Total Cost": 25.05, "Transport Cost": 9.8, "cost_delta": 5.74}
+{"Approach": "Nominal", "Avg Utilization": 96.0, "Facilities Opened": 2, "Facility Cost": 10.45, "Spare Capacity": 1.21, "Total Cost": 19.31, "Transport Cost": 8.86, "cost_delta": 0.0, "instance": "n=8,m=30,seed=42"}
+{"Approach": "Robust (Gamma=3)", "Avg Utilization": 90.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 4.39, "Total Cost": 26.22, "Transport Cost": 10.97, "cost_delta": 6.91, "instance": "n=8,m=30,seed=42"}
+{"Approach": "Robust (Gamma=5)", "Avg Utilization": 99.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 0.13, "Total Cost": 27.46, "Transport Cost": 12.21, "cost_delta": 8.15, "instance": "n=8,m=30,seed=42"}
+{"Approach": "Ellipsoidal", "Avg Utilization": 81.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 8.75, "Total Cost": 25.05, "Transport Cost": 9.8, "cost_delta": 5.74, "instance": "n=8,m=30,seed=42"}
+{"Approach": "Nominal (ADR instance)", "Avg Utilization": 80.0, "Facilities Opened": 1, "Facility Cost": 5.3, "Spare Capacity": 3.2, "Total Cost": 9.98, "Transport Cost": 4.68, "cost_delta": 0.0, "instance": "n=5,m=12,seed=42"}
+{"Approach": "Adaptive (rho=1, Gamma=3)", "Avg Utilization": 41.0, "Facilities Opened": 2, "Facility Cost": 10.4, "Spare Capacity": 18.27, "Total Cost": 14.48, "Transport Cost": 4.08, "cost_delta": 4.5, "instance": "n=5,m=12,seed=42"}
