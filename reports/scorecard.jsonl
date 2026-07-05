@@ -1,0 +1,4 @@
+{"Approach": "Nominal", "Avg Utilization": 96.0, "Facilities Opened": 2, "Facility Cost": 10.45, "Spare Capacity": 1.21, "Total Cost": 19.31, "Transport Cost": 8.86, "cost_delta": 0.0}
+{"Approach": "Robust (Gamma=3)", "Avg Utilization": 90.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 4.39, "Total Cost": 26.22, "Transport Cost": 10.97, "cost_delta": 6.91}
+{"Approach": "Robust (Gamma=5)", "Avg Utilization": 99.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 0.13, "Total Cost": 27.46, "Transport Cost": 12.21, "cost_delta": 8.15}
+{"Approach": "Ellipsoidal", "Avg Utilization": 81.7, "Facilities Opened": 3, "Facility Cost": 15.25, "Spare Capacity": 8.75, "Total Cost": 25.05, "Transport Cost": 9.8, "cost_delta": 5.74}
