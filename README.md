@@ -121,3 +121,7 @@ pages/
 ## License
 
 MIT.
+
+## Method update
+
+[October method update: Evaluate the rounded policy after solving the relaxation](docs/rounded-policy-feasibility.md).
