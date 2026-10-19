@@ -34,6 +34,7 @@ class SolutionData:
     solve_time: float         # Wall-clock solve time in seconds
     status: str               # Solver status string
     name: str = ""            # Label for this solution
+    warning: str = ""         # Caveat to show next to the cost ("" if none)
 
 
 @dataclass

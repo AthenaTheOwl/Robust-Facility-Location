@@ -212,6 +212,9 @@ with tab_adaptive:
                 nominal = solve_nominal(data)
                 store_cached_value("nominal_solution", nominal, base_problem_signature, "nominal")
 
+            if adapt_solution.warning:
+                st.warning(adapt_solution.warning)
+
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Total Cost", f"${adapt_solution.objective:.2f}")
             col2.metric("Facilities Opened", f"{int(np.sum(adapt_solution.x > 0.5))}")
@@ -227,10 +230,11 @@ with tab_adaptive:
                 st.plotly_chart(create_cost_breakdown_figure(adapt_solution), use_container_width=True)
             with col2:
                 st.plotly_chart(create_capacity_chart(data, adapt_solution), use_container_width=True)
-            st.caption(
-                "The objective above is the adaptive model's worst-case planning cost. "
-                "The network and capacity visuals use a nominal dispatch for the selected facilities."
-            )
+            if not adapt_solution.warning:
+                st.caption(
+                    "The objective above is the adaptive model's worst-case planning cost. "
+                    "The network and capacity visuals use a nominal dispatch for the selected facilities."
+                )
     else:
         st.info("Run the adaptive model to evaluate the current ρ and Γ settings.")
 

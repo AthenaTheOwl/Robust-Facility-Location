@@ -169,6 +169,7 @@ def solve_adaptive(
         time_limit=60,
     )
 
+    warning = ""
     if evaluation is not None:
         objective = float(evaluation["objective"])
         transport_cost = max(objective - facility_cost, 0.0)
@@ -178,6 +179,12 @@ def solve_adaptive(
         transport_cost = float(np.sum(data.c * y_val))
         objective = facility_cost + transport_cost
         status = "Approximate (rounded)"
+        warning = (
+            "The adaptive re-solve with the rounded openings fixed returned no solution "
+            "(infeasible or out of time). Total cost is the nominal-dispatch cost of those "
+            "openings, not a worst-case adaptive cost, so it is not comparable with the "
+            "robust approaches."
+        )
 
     solve_time = time.time() - t0
 
@@ -189,6 +196,7 @@ def solve_adaptive(
         solve_time=solve_time,
         status=status,
         name=f"Adaptive (ρ={rho}, Γ={gamma})",
+        warning=warning,
     )
 
 

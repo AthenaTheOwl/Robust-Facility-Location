@@ -104,10 +104,13 @@ st.subheader("Cost Breakdown")
 fig_cost = create_cost_comparison_figure(list(solutions.values()))
 st.plotly_chart(fig_cost, use_container_width=True)
 if include_adaptive:
-    st.caption(
-        "Adaptive cost uses the worst-case planning objective. "
-        "Its plotted flows are a nominal dispatch for the chosen facilities."
-    )
+    if solutions["Adaptive"].warning:
+        st.warning(solutions["Adaptive"].warning)
+    else:
+        st.caption(
+            "Adaptive cost uses the worst-case planning objective. "
+            "Its plotted flows are a nominal dispatch for the chosen facilities."
+        )
 
 # --- Capacity Comparison ---
 st.subheader("Capacity Utilization")
