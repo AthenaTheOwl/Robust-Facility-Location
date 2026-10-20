@@ -83,6 +83,14 @@ st.subheader("Summary")
 summary_rows = [solution_summary(data, sol) for sol in solutions.values()]
 df = pd.DataFrame(summary_rows)
 st.dataframe(df, use_container_width=True, hide_index=True)
+if include_adaptive:
+    if solutions["Adaptive"].warning:
+        st.warning(solutions["Adaptive"].warning)
+    else:
+        st.caption(
+            "Adaptive cost uses the worst-case planning objective. "
+            "Its plotted flows are a nominal dispatch for the chosen facilities."
+        )
 
 # --- Network Maps ---
 st.subheader("Network Maps")
@@ -103,14 +111,6 @@ for row_start in range(0, len(sol_list), n_cols):
 st.subheader("Cost Breakdown")
 fig_cost = create_cost_comparison_figure(list(solutions.values()))
 st.plotly_chart(fig_cost, use_container_width=True)
-if include_adaptive:
-    if solutions["Adaptive"].warning:
-        st.warning(solutions["Adaptive"].warning)
-    else:
-        st.caption(
-            "Adaptive cost uses the worst-case planning objective. "
-            "Its plotted flows are a nominal dispatch for the chosen facilities."
-        )
 
 # --- Capacity Comparison ---
 st.subheader("Capacity Utilization")
