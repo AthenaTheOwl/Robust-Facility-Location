@@ -8,6 +8,10 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 3.13 resolves the newest PuLP the requirements allow; 3.11 matches DEPLOY.md.
+        python-version: ["3.11", "3.13"]
 
     steps:
       - name: Check out repository
@@ -16,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |

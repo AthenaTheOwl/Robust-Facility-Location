@@ -118,10 +118,10 @@ pages/
 - Ben-Tal, El Ghaoui, and Nemirovski, *Robust Optimization* (2009): https://doi.org/10.1515/9781400831050
 - Bertsimas and Tsitsiklis, *Introduction to Linear Optimization*
 
-## License
-
-MIT.
-
 ## Method update
 
 [October method update: Evaluate the rounded policy after solving the relaxation](docs/rounded-policy-feasibility.md).
+
+## License
+
+MIT.

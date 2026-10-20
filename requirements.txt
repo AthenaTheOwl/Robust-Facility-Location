@@ -1,5 +1,6 @@
 streamlit>=1.30.0
-pulp>=2.7.0
+# PuLP 4 drops direct LpVariable(...) construction, LpStatus and the bundled CBC solver that core/ uses.
+pulp>=2.7.0,<4
 cvxpy>=1.4.0
 plotly>=5.18.0
 numpy>=1.24.0

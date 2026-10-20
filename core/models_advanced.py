@@ -153,7 +153,7 @@ def solve_adaptive(
             )
 
     # Use nominal dispatch only for visualization and capacity charts.
-    y_val = _compute_nominal_flows(data, x_final)
+    y_val, nominal_status = _compute_nominal_flows(data, x_final)
     facility_cost = float(np.dot(data.f, x_final))
 
     # Re-evaluate the chosen binary design in the adaptive robust model so the
@@ -169,7 +169,10 @@ def solve_adaptive(
         time_limit=60,
     )
 
-    if evaluation is not None:
+    warning = ""
+    # A CBC time-out still comes back as status 1 with a non-optimal iterate, so
+    # only a proven-optimal re-solve counts as the worst-case adaptive cost.
+    if evaluation is not None and evaluation["proven_optimal"]:
         objective = float(evaluation["objective"])
         transport_cost = max(objective - facility_cost, 0.0)
         status = "Optimal (rounded)"
@@ -178,6 +181,17 @@ def solve_adaptive(
         transport_cost = float(np.sum(data.c * y_val))
         objective = facility_cost + transport_cost
         status = "Approximate (rounded)"
+        warning = (
+            "The adaptive re-solve with the rounded openings fixed returned no solution "
+            "(infeasible or out of time). Total cost is the nominal-dispatch cost of those "
+            "openings, not a worst-case adaptive cost, so it is not comparable with the "
+            "robust approaches."
+        )
+        if nominal_status != pulp.LpStatusOptimal:
+            warning += (
+                " The nominal dispatch for these openings is also infeasible, so the "
+                "cost shown is not meaningful."
+            )
 
     solve_time = time.time() - t0
 
@@ -189,6 +203,7 @@ def solve_adaptive(
         solve_time=solve_time,
         status=status,
         name=f"Adaptive (ρ={rho}, Γ={gamma})",
+        warning=warning,
     )
 
 
@@ -342,11 +357,13 @@ def _solve_adaptive_relaxed(
     return {
         "x": x_val,
         "objective": float(pulp.value(F)),
+        # False when CBC stopped on its time limit with a feasible, unproven iterate.
+        "proven_optimal": prob.sol_status == pulp.LpSolutionOptimal,
     }
 
 
-def _compute_nominal_flows(data: ProblemData, x_fixed: np.ndarray) -> np.ndarray:
-    """Given fixed binary x, solve the nominal flow LP to get y."""
+def _compute_nominal_flows(data: ProblemData, x_fixed: np.ndarray) -> tuple[np.ndarray, int]:
+    """Given fixed binary x, solve the nominal flow LP; return y and the PuLP status."""
     n, m = data.n, data.m
     prob = pulp.LpProblem("NominalFlows", pulp.LpMinimize)
 
@@ -365,4 +382,5 @@ def _compute_nominal_flows(data: ProblemData, x_fixed: np.ndarray) -> np.ndarray
                 prob += y[i][j] == 0
 
     prob.solve(pulp.PULP_CBC_CMD(msg=0))
-    return np.array([[y[i][j].varValue or 0.0 for j in range(m)] for i in range(n)])
+    y_val = np.array([[y[i][j].varValue or 0.0 for j in range(m)] for i in range(n)])
+    return y_val, prob.status
